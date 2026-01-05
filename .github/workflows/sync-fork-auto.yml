@@ -9,7 +9,8 @@ jobs:
   sync-repo:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    # 修正后的权限声明（使用正确格式）
+    
+    # 正确的权限声明格式
     permissions:
       contents: write
       releases: write
@@ -122,9 +123,9 @@ jobs:
                           # 上传附件
                           print(f"⬆️ 上传附件: {asset.name}")
                           try:
+                              # 使用 upload_asset 方法并传递内容
                               new_release.upload_asset(
                                   name=asset.name,
-                                  path=None,
                                   content_type=asset.content_type,
                                   file=response.content
                               )
