@@ -8,7 +8,8 @@ on:
 jobs:
   sync-repo:
     runs-on: ubuntu-latest
-    timeout-minutes: 60  # 延长超时时间确保完整同步
+    timeout-minutes: 60
+    # 修正后的权限声明（使用正确格式）
     permissions:
       contents: write
       releases: write
@@ -49,7 +50,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          python3 - <<EOF
+          python3 - << "EOF"
           import os
           import requests
           from github import Github, GithubException
@@ -94,7 +95,6 @@ jobs:
                   # 如果标签已存在但无 Release，则直接创建
                   if "already exists" in str(e):
                       print("ℹ️ 标签已存在，创建关联的 Release")
-                      tag_ref = target.get_git_ref(f"tags/{release.tag_name}")
                       new_release = target.create_git_release(
                           tag=release.tag_name,
                           name=release.title,
@@ -122,10 +122,11 @@ jobs:
                           # 上传附件
                           print(f"⬆️ 上传附件: {asset.name}")
                           try:
-                              new_release.upload_asset_from_memory(
-                                  response.content,
-                                  asset.name,
-                                  asset.content_type
+                              new_release.upload_asset(
+                                  name=asset.name,
+                                  path=None,
+                                  content_type=asset.content_type,
+                                  file=response.content
                               )
                               print(f"✅ 上传成功: {asset.name}")
                           except GithubException as e:
