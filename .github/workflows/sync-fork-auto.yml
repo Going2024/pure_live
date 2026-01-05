@@ -1,4 +1,5 @@
-- name: 运行 Releases 同步脚本
+name: 运行 Releases 同步脚本
+
   env:
     GH_TOKEN: ${{ secrets.GH_PAT }}
   run: |
