@@ -10,8 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
-      contents: write
-      releases: write
+      contents: write  # 正确的权限配置，包含releases操作权限
     steps:
       - name: 检出目标仓库
         uses: actions/checkout@v4
