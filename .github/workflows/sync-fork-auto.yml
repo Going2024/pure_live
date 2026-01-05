@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     
-    # 正确的权限声明格式
+    # 正确的权限声明方式
     permissions:
       contents: write
       releases: write
@@ -51,93 +51,90 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          python3 - << "EOF"
-          import os
-          import requests
-          from github import Github, GithubException
-          from datetime import datetime
-          import time
+          python3 -c "
+import os
+import requests
+from github import Github, GithubException
 
-          # 配置参数
-          UPSTREAM_REPO = "liuchuancong/pure_live"
-          TARGET_REPO = "Going2024/pure_live"
-          GH_TOKEN = os.getenv('GH_TOKEN')
+# 配置参数
+UPSTREAM_REPO = 'liuchuancong/pure_live'
+TARGET_REPO = 'Going2024/pure_live'
+GH_TOKEN = os.getenv('GH_TOKEN')
 
-          # 初始化 GitHub 客户端
-          g = Github(GH_TOKEN)
-          upstream = g.get_repo(UPSTREAM_REPO)
-          target = g.get_repo(TARGET_REPO)
+# 初始化 GitHub 客户端
+g = Github(GH_TOKEN)
+upstream = g.get_repo(UPSTREAM_REPO)
+target = g.get_repo(TARGET_REPO)
 
-          # 获取目标仓库现有 releases
-          existing_releases = {}
-          for release in target.get_releases():
-              existing_releases[release.tag_name] = release
+# 获取目标仓库现有 releases
+existing_releases = {}
+for release in target.get_releases():
+    existing_releases[release.tag_name] = release
 
-          # 同步所有 releases
-          for release in upstream.get_releases():
-              print(f"\n🔍 处理 Release: {release.title} ({release.tag_name})")
-              
-              # 检查是否已存在
-              if release.tag_name in existing_releases:
-                  print(f"⏩ 已存在, 跳过: {release.tag_name}")
-                  continue
-              
-              # 创建新 release
-              print(f"🚀 创建新 Release: {release.tag_name}")
-              try:
-                  new_release = target.create_git_release(
-                      tag=release.tag_name,
-                      name=release.title,
-                      message=release.body,
-                      draft=release.draft,
-                      prerelease=release.prerelease
-                  )
-              except GithubException as e:
-                  # 如果标签已存在但无 Release，则直接创建
-                  if "already exists" in str(e):
-                      print("ℹ️ 标签已存在，创建关联的 Release")
-                      new_release = target.create_git_release(
-                          tag=release.tag_name,
-                          name=release.title,
-                          message=release.body,
-                          draft=release.draft,
-                          prerelease=release.prerelease
-                      )
-                  else:
-                      print(f"❌ 创建失败: {str(e)}")
-                      continue
-              
-              # 同步附件
-              assets = release.get_assets()
-              if assets.totalCount > 0:
-                  print(f"📎 发现 {assets.totalCount} 个附件")
-                  
-                  for asset in assets:
-                      print(f"⬇️ 下载附件: {asset.name} ({asset.size/1024/1024:.2f}MB)")
-                      
-                      # 下载附件
-                      headers = {'Authorization': f'token {GH_TOKEN}', 'Accept': 'application/octet-stream'}
-                      response = requests.get(asset.url, headers=headers, stream=True)
-                      
-                      if response.status_code == 200:
-                          # 上传附件
-                          print(f"⬆️ 上传附件: {asset.name}")
-                          try:
-                              # 使用 upload_asset 方法并传递内容
-                              new_release.upload_asset(
-                                  name=asset.name,
-                                  content_type=asset.content_type,
-                                  file=response.content
-                              )
-                              print(f"✅ 上传成功: {asset.name}")
-                          except GithubException as e:
-                              print(f"❌ 上传失败: {str(e)}")
-                      else:
-                          print(f"❌ 下载失败: {asset.name} (状态码: {response.status_code})")
-                  
-                  print(f"✅ 附件同步完成: {assets.totalCount} 个")
-              else:
-                  print("ℹ️ 无附件")
-          
-          print("\n🎉 所有 Releases 同步完成!")
-          EOF
+# 同步所有 releases
+for release in upstream.get_releases():
+    print(f'\\n🔍 处理 Release: {release.title} ({release.tag_name})')
+    
+    # 检查是否已存在
+    if release.tag_name in existing_releases:
+        print(f'⏩ 已存在, 跳过: {release.tag_name}')
+        continue
+    
+    # 创建新 release
+    print(f'🚀 创建新 Release: {release.tag_name}')
+    try:
+        new_release = target.create_git_release(
+            tag=release.tag_name,
+            name=release.title,
+            message=release.body,
+            draft=release.draft,
+            prerelease=release.prerelease
+        )
+    except GithubException as e:
+        # 如果标签已存在但无 Release，则直接创建
+        if 'already exists' in str(e):
+            print('ℹ️ 标签已存在，创建关联的 Release')
+            new_release = target.create_git_release(
+                tag=release.tag_name,
+                name=release.title,
+                message=release.body,
+                draft=release.draft,
+                prerelease=release.prerelease
+            )
+        else:
+            print(f'❌ 创建失败: {str(e)}')
+            continue
+    
+    # 同步附件
+    assets = release.get_assets()
+    if assets.totalCount > 0:
+        print(f'📎 发现 {assets.totalCount} 个附件')
+        
+        for asset in assets:
+            print(f'⬇️ 下载附件: {asset.name} ({asset.size/1024/1024:.2f}MB}')
+            
+            # 下载附件
+            headers = {'Authorization': f'token {GH_TOKEN}', 'Accept': 'application/octet-stream'}
+            response = requests.get(asset.url, headers=headers, stream=True)
+            
+            if response.status_code == 200:
+                # 上传附件
+                print(f'⬆️ 上传附件: {asset.name}')
+                try:
+                    new_release.upload_asset(
+                        name=asset.name,
+                        content_type=asset.content_type,
+                        file=response.content
+                    )
+                    print(f'✅ 上传成功: {asset.name}')
+                except GithubException as e:
+                    print(f'❌ 上传失败: {str(e)}')
+            else:
+                print(f'❌ 下载失败: {asset.name} (状态码: {response.status_code})')
+        
+        print(f'✅ 附件同步完成: {assets.totalCount} 个')
+    else:
+        print('ℹ️ 无附件')
+
+print('\\n🎉 所有 Releases 同步完成!')
+"
